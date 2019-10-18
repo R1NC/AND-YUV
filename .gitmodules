@@ -1,0 +1,3 @@
+[submodule "app/src/main/cpp/libyuv"]
+	path = app/src/main/cpp/libyuv
+	url = https://chromium.googlesource.com/libyuv/libyuv
