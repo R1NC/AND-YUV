@@ -1,12 +1,15 @@
 #include <jni.h>
 #include <libyuv.h>
 
+using namespace libyuv;
+
 class YUV {
 private:
     JNIEnv *env;
     jbyteArray jba;
 public:
-    jbyte *data, *y, *vu, *u, *v;
+    jbyte *data;
+    uint8_t *y, *vu, *u, *v;
     int y_stride, vu_stride, u_stride, v_stride;
 
     YUV(JNIEnv *env, jbyteArray jba, int w, int h) {
@@ -14,13 +17,13 @@ public:
         this->jba = jba;
         int size = w * h;
         data = env->GetByteArrayElements(jba, NULL);
-        y = data;
-        y_stride = w;
+        y = (uint8_t *) data;
         u = y + size;
-        u_stride = w / 2;
         vu = u;
-        vu_stride = w;
         v = u + size / 4;
+        y_stride = w;
+        u_stride = w / 2;
+        vu_stride = w;
         v_stride = w / 2;
     }
 
@@ -38,12 +41,12 @@ Java_com_libyuv_util_YuvUtil_I420ToNV21(JNIEnv *env, jclass,
     YUV i420(env, i420_bytes, width, height);
     YUV nv21(env, nv21_bytes, width, height);
 
-    libyuv::I420ToNV21(
-            (const uint8_t *) i420.y, i420.y_stride,
-            (const uint8_t *) i420.u, i420.u_stride,
-            (const uint8_t *) i420.v, i420.v_stride,
-            (uint8_t *) nv21.y, nv21.y_stride,
-            (uint8_t *) nv21.vu, nv21.vu_stride,
+    I420ToNV21(
+            i420.y, i420.y_stride,
+            i420.u, i420.u_stride,
+            i420.v, i420.v_stride,
+            nv21.y, nv21.y_stride,
+            nv21.vu, nv21.vu_stride,
             width, height);
 }
 
@@ -56,12 +59,12 @@ Java_com_libyuv_util_YuvUtil_NV21ToI420(JNIEnv *env, jclass,
     YUV nv21(env, nv21_bytes, width, height);
     YUV i420(env, i420_bytes, width, height);
 
-    libyuv::NV21ToI420((const uint8_t *) nv21.y, nv21.y_stride,
-                       (const uint8_t *) nv21.vu, nv21.vu_stride,
-                       (uint8_t *) i420.y, i420.y_stride,
-                       (uint8_t *) i420.u, i420.u_stride,
-                       (uint8_t *) i420.v, i420.v_stride,
-                       width, height);
+    NV21ToI420(nv21.y, nv21.y_stride,
+               nv21.vu, nv21.vu_stride,
+               i420.y, i420.y_stride,
+               i420.u, i420.u_stride,
+               i420.v, i420.v_stride,
+               width, height);
 }
 
 extern "C"
@@ -73,14 +76,14 @@ Java_com_libyuv_util_YuvUtil_rotateI420(JNIEnv *env, jclass,
     YUV src(env, src_bytes, width, height);
     YUV dst(env, dst_bytes, width, height);
 
-    libyuv::I420Rotate((const uint8_t *) src.y, src.y_stride,
-                       (const uint8_t *) src.u, src.u_stride,
-                       (const uint8_t *) src.v, src.v_stride,
-                       (uint8_t *) dst.y, dst.y_stride,
-                       (uint8_t *) dst.u, dst.u_stride,
-                       (uint8_t *) dst.v, dst.v_stride,
-                       width, height,
-                       (libyuv::RotationMode) degree);
+    I420Rotate(src.y, src.y_stride,
+               src.u, src.u_stride,
+               src.v, src.v_stride,
+               dst.y, dst.y_stride,
+               dst.u, dst.u_stride,
+               dst.v, dst.v_stride,
+               width, height,
+               (RotationMode) degree);
 }
 
 extern "C"
@@ -91,13 +94,13 @@ Java_com_libyuv_util_YuvUtil_mirrorI420(JNIEnv *env, jclass,
     YUV src(env, src_bytes, width, height);
     YUV dst(env, dst_bytes, width, height);
 
-    libyuv::I420Mirror((const uint8_t *) src.y, src.y_stride,
-                       (const uint8_t *) src.u, src.u_stride,
-                       (const uint8_t *) src.v, src.v_stride,
-                       (uint8_t *) dst.y, dst.y_stride,
-                       (uint8_t *) dst.u, dst.u_stride,
-                       (uint8_t *) dst.v, dst.v_stride,
-                       width, height);
+    I420Mirror(src.y, src.y_stride,
+               src.u, src.u_stride,
+               src.v, src.v_stride,
+               dst.y, dst.y_stride,
+               dst.u, dst.u_stride,
+               dst.v, dst.v_stride,
+               width, height);
 }
 
 extern "C"
@@ -110,13 +113,13 @@ Java_com_libyuv_util_YuvUtil_scaleI420(JNIEnv *env, jclass,
     YUV src(env, src_bytes, src_width, src_height);
     YUV dst(env, dst_bytes, dst_width, dst_height);
 
-    libyuv::I420Scale((const uint8_t *) src.y, src.y_stride,
-                      (const uint8_t *) src.u, src.u_stride,
-                      (const uint8_t *) src.v, src.v_stride,
-                      src_width, src_height,
-                      (uint8_t *) dst.y, dst.y_stride,
-                      (uint8_t *) dst.u, dst.u_stride,
-                      (uint8_t *) dst.v, dst.v_stride,
-                      dst_width, dst_height,
-                      (libyuv::FilterMode) mode);
+    I420Scale(src.y, src.y_stride,
+              src.u, src.u_stride,
+              src.v, src.v_stride,
+              src_width, src_height,
+              dst.y, dst.y_stride,
+              dst.u, dst.u_stride,
+              dst.v, dst.v_stride,
+              dst_width, dst_height,
+              (FilterMode) mode);
 }
