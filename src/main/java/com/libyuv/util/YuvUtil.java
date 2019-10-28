@@ -99,18 +99,11 @@ public class YuvUtil {
         return data;
     }
     
-    public static byte[] nv21ToJpeg(byte[] data, Rect rect, String dumpFile) {
-        final YuvImage yuvImg = new YuvImage(data, ImageFormat.NV21, rect.width(), rect.height(), null);
-        if (!TextUtils.isEmpty(dumpFile)) {
-            try {
-                FileOutputStream fos = new FileOutputStream(dumpFile);
-                yuvImg.compressToJpeg(rect, 100, fos);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+    public static byte[] compressToJpeg(byte[] data, int format, int width, int height, Rect cropRect) {
+        if (cropRect == null) cropRect = new Rect(0, 0, width, height);
+        final YuvImage yuvImg = new YuvImage(data, format, width, height, null);
         ByteArrayOutputStream baos = new ByteArrayOutputStream(data.length);
-        if (yuvImg.compressToJpeg(rect, 100, baos)) {
+        if (yuvImg.compressToJpeg(cropRect, 100, baos)) {
             return baos.toByteArray();
         }
         return null;
