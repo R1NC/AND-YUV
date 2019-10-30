@@ -53,7 +53,7 @@ public class YuvUtil {
                     if (yuvFormat == YuvFormat.I420) {
                         channelOffset = width * height;
                         outputStride = 1;
-                    } else if (yuvFormat == YuvFormat.NV21) {
+                    } else {
                         channelOffset = width * height + 1;
                         outputStride = 2;
                     }
@@ -62,7 +62,7 @@ public class YuvUtil {
                     if (yuvFormat == YuvFormat.I420) {
                         channelOffset = (int) (width * height * 1.25);
                         outputStride = 1;
-                    } else if (yuvFormat == YuvFormat.NV21) {
+                    } else {
                         channelOffset = width * height;
                         outputStride = 2;
                     }
@@ -123,12 +123,9 @@ public class YuvUtil {
         byte[] dst_bytes = new byte[width * height * 3 / 2];
         int degree = 0;
         switch (mode) {
-            case Clockwise270:
-                degree += 90;
-            case Clockwise180:
-                degree += 90;
-            case Clockwise90:
-                degree += 90;
+            case Clockwise270: degree += 90;
+            case Clockwise180: degree += 90;
+            case Clockwise90: degree += 90;
         }
         rotateI420(src_bytes, width, height, dst_bytes, degree);
         return dst_bytes;
@@ -143,12 +140,9 @@ public class YuvUtil {
     public static byte[] scaleI420(byte[] src_bytes, int src_width, int src_height, int dst_width, int dst_height, FilterMode filter_mode) {
         int mode = 0;
         switch (filter_mode) {
-            case Box:
-                mode++;
-            case Bilinear:
-                mode++;
-            case Linear:
-                mode++;
+            case Box: mode++;
+            case Bilinear: mode++;
+            case Linear: mode++;
             case None:
         }
         byte[] dst_bytes = new byte[dst_width * dst_height * 3 / 2];
@@ -157,12 +151,8 @@ public class YuvUtil {
     }
 
     private static native void I420ToNV21(byte[] i420_bytes, byte[] nv21_bytes, int width, int height);
-
     private static native void NV21ToI420(byte[] nv21_bytes, byte[] i420_bytes, int width, int height);
-
     private static native void rotateI420(byte[] src_bytes, int width, int height, byte[] dst_bytes, int degree);
-
     private static native void mirrorI420(byte[] src_bytes, int width, int height, byte[] dst_bytes);
-
     private static native void scaleI420(byte[] src_bytes, int src_width, int src_height, byte[] dst_bytes, int dst_width, int dst_height, int filter_mode);
 }
