@@ -12,7 +12,7 @@ public:
     uint8_t *y, *vu, *u, *v;
     int y_stride, vu_stride, u_stride, v_stride;
 
-    YUV(JNIEnv *env, jbyteArray jba, int w, int h) {
+    YUV(JNIEnv *env, jbyteArray jba, int w, int h, bool rotate = false) {
         this->env = env;
         this->jba = jba;
         int size = w * h;
@@ -21,10 +21,10 @@ public:
         u = y + size;
         vu = u;
         v = u + size / 4;
-        y_stride = w;
-        u_stride = w / 2;
-        vu_stride = w;
-        v_stride = w / 2;
+        y_stride = rotate ? h : w;
+        u_stride = y_stride / 2;
+        vu_stride = y_stride;
+        v_stride = y_stride / 2;
     }
 
     ~YUV() {
@@ -74,7 +74,7 @@ Java_com_libyuv_util_YuvUtil_rotateI420(JNIEnv *env, jclass,
                                                             jint height, jbyteArray dst_bytes,
                                                             jint degree) {
     YUV src(env, src_bytes, width, height);
-    YUV dst(env, dst_bytes, width, height);
+    YUV dst(env, dst_bytes, width, height, degree == 90 || degree == 270);
 
     I420Rotate(src.y, src.y_stride,
                src.u, src.u_stride,
