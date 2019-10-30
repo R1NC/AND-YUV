@@ -108,45 +108,49 @@ public class YuvUtil {
     }
 
     public static byte[] I420ToNV21(byte[] i420_bytes, int width, int height) {
-        byte[] nv21_bytes = new byte[width * height * 3 / 2];
-        I420ToNV21(i420_bytes, nv21_bytes, width, height);
-        return nv21_bytes;
+        return handleYUVBytes(width, height, (dst_bytes)->I420ToNV21(i420_bytes, dst_bytes, width, height));
     }
 
     public static byte[] NV21ToI420(byte[] nv21_bytes, int width, int height) {
-        byte[] dst_bytes = new byte[width * height * 3 / 2];
-        NV21ToI420(nv21_bytes, dst_bytes, width, height);
-        return dst_bytes;
+        return handleYUVBytes(width, height, (dst_bytes)->NV21ToI420(nv21_bytes, dst_bytes, width, height));
     }
 
     public static byte[] rotateI420(byte[] src_bytes, int width, int height, RotateMode mode) {
-        byte[] dst_bytes = new byte[width * height * 3 / 2];
-        int degree = 0;
-        switch (mode) {
-            case Clockwise270: degree += 90;
-            case Clockwise180: degree += 90;
-            case Clockwise90: degree += 90;
-        }
-        rotateI420(src_bytes, width, height, dst_bytes, degree);
-        return dst_bytes;
+        return handleYUVBytes(width, height, (dst_bytes)->{
+            int degree = 0;
+            switch (mode) {
+                case Clockwise270: degree += 90;
+                case Clockwise180: degree += 90;
+                case Clockwise90: degree += 90;
+            }
+            rotateI420(src_bytes, width, height, dst_bytes, degree);
+        });
     }
 
     public static byte[] mirrorI420(byte[] src_bytes, int width, int height) {
-        byte[] dst_bytes = new byte[width * height * 3 / 2];
-        mirrorI420(src_bytes, width, height, dst_bytes);
-        return dst_bytes;
+        return handleYUVBytes(width, height, (dst_bytes)->mirrorI420(src_bytes, width, height, dst_bytes));
     }
 
     public static byte[] scaleI420(byte[] src_bytes, int src_width, int src_height, int dst_width, int dst_height, FilterMode filter_mode) {
-        int mode = 0;
-        switch (filter_mode) {
-            case Box: mode++;
-            case Bilinear: mode++;
-            case Linear: mode++;
-            case None:
-        }
+        return handleYUVBytes(dst_width, dst_height, (dst_bytes)->{
+            int mode = 0;
+            switch (filter_mode) {
+                case Box: ++mode;
+                case Bilinear: ++mode;
+                case Linear: ++mode;
+                case None:
+            }
+            scaleI420(src_bytes, src_width, src_height, dst_bytes, dst_width, dst_height, mode);
+        });
+    }
+
+    private interface YUVOperation {
+        void operate(byte[] dst_bytes);
+    }
+
+    private static byte[] handleYUVBytes(int dst_width, int dst_height, YUVOperation op) {
         byte[] dst_bytes = new byte[dst_width * dst_height * 3 / 2];
-        scaleI420(src_bytes, src_width, src_height, dst_bytes, dst_width, dst_height, mode);
+        op.operate(dst_bytes);
         return dst_bytes;
     }
 
