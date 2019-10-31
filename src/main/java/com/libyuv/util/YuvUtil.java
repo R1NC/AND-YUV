@@ -35,21 +35,21 @@ public class YuvUtil {
 
     public static byte[] imageToYuvBytes(Image image, YuvFormat yuvFormat) {
         Rect crop = image.getCropRect();
-        int format = image.getFormat();
         int width = crop.width();
         int height = crop.height();
         Image.Plane[] planes = image.getPlanes();
-        byte[] data = new byte[width * height * ImageFormat.getBitsPerPixel(format) / 8];
-        byte[] rowData = new byte[planes[0].getRowStride()];
+        byte[] yuv_bytes = new byte[width * height * ImageFormat.getBitsPerPixel(image.getFormat()) / 8];
+        byte[] row_bytes = new byte[planes[0].getRowStride()];
         int channelOffset = 0;
         int outputStride = 1;
         for (int i = 0; i < planes.length; i++) {
             switch (i) {
-                case 0:
+                case 0: {
                     channelOffset = 0;
                     outputStride = 1;
                     break;
-                case 1:
+                }
+                case 1: {
                     if (yuvFormat == YuvFormat.I420) {
                         channelOffset = width * height;
                         outputStride = 1;
@@ -58,15 +58,17 @@ public class YuvUtil {
                         outputStride = 2;
                     }
                     break;
-                case 2:
+                }
+                case 2: {
                     if (yuvFormat == YuvFormat.I420) {
-                        channelOffset = (int) (width * height * 1.25);
+                        channelOffset = width * height * 5 / 4;
                         outputStride = 1;
                     } else {
                         channelOffset = width * height;
                         outputStride = 2;
                     }
                     break;
+                }
             }
             ByteBuffer buffer = planes[i].getBuffer();
             int rowStride = planes[i].getRowStride();
@@ -79,13 +81,13 @@ public class YuvUtil {
                 int length;
                 if (pixelStride == 1 && outputStride == 1) {
                     length = w;
-                    buffer.get(data, channelOffset, length);
+                    buffer.get(yuv_bytes, channelOffset, length);
                     channelOffset += length;
                 } else {
                     length = (w - 1) * pixelStride + 1;
-                    buffer.get(rowData, 0, length);
+                    buffer.get(row_bytes, 0, length);
                     for (int col = 0; col < w; col++) {
-                        data[channelOffset] = rowData[col * pixelStride];
+                        yuv_bytes[channelOffset] = row_bytes[col * pixelStride];
                         channelOffset += outputStride;
                     }
                 }
@@ -94,7 +96,7 @@ public class YuvUtil {
                 }
             }
         }
-        return data;
+        return yuv_bytes;
     }
     
     public static byte[] compressToJpeg(byte[] data, int format, int width, int height, Rect cropRect) {
