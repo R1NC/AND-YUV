@@ -33,15 +33,15 @@ public:
 };
 
 extern "C"
-JNIEXPORT void JNICALL
-Java_com_libyuv_util_YuvUtil_I420ToNV21(JNIEnv *env, jclass,
+JNIEXPORT jint JNICALL
+Java_xyz_rinc_roid_yuv_YuvUtil_nativeI420ToNV21(JNIEnv *env, jclass,
                                                             jbyteArray i420_bytes,
                                                             jbyteArray nv21_bytes,
                                                             jint width, jint height) {
     YUV i420(env, i420_bytes, width, height);
     YUV nv21(env, nv21_bytes, width, height);
 
-    I420ToNV21(
+    return I420ToNV21(
             i420.y, i420.y_stride,
             i420.u, i420.u_stride,
             i420.v, i420.v_stride,
@@ -51,15 +51,15 @@ Java_com_libyuv_util_YuvUtil_I420ToNV21(JNIEnv *env, jclass,
 }
 
 extern "C"
-JNIEXPORT void JNICALL
-Java_com_libyuv_util_YuvUtil_NV21ToI420(JNIEnv *env, jclass,
+JNIEXPORT jint JNICALL
+Java_xyz_rinc_roid_yuv_YuvUtil_nativeNV21ToI420(JNIEnv *env, jclass,
                                                             jbyteArray nv21_bytes,
                                                             jbyteArray i420_bytes,
                                                             jint width, jint height) {
     YUV nv21(env, nv21_bytes, width, height);
     YUV i420(env, i420_bytes, width, height);
 
-    NV21ToI420(nv21.y, nv21.y_stride,
+    return NV21ToI420(nv21.y, nv21.y_stride,
                nv21.vu, nv21.vu_stride,
                i420.y, i420.y_stride,
                i420.u, i420.u_stride,
@@ -68,15 +68,15 @@ Java_com_libyuv_util_YuvUtil_NV21ToI420(JNIEnv *env, jclass,
 }
 
 extern "C"
-JNIEXPORT void JNICALL
-Java_com_libyuv_util_YuvUtil_rotateI420(JNIEnv *env, jclass,
+JNIEXPORT jint JNICALL
+Java_xyz_rinc_roid_yuv_YuvUtil_nativeRotateI420(JNIEnv *env, jclass,
                                                             jbyteArray src_bytes, jint width,
                                                             jint height, jbyteArray dst_bytes,
                                                             jint degree) {
     YUV src(env, src_bytes, width, height);
     YUV dst(env, dst_bytes, width, height, degree == 90 || degree == 270);
 
-    I420Rotate(src.y, src.y_stride,
+    return I420Rotate(src.y, src.y_stride,
                src.u, src.u_stride,
                src.v, src.v_stride,
                dst.y, dst.y_stride,
@@ -87,14 +87,14 @@ Java_com_libyuv_util_YuvUtil_rotateI420(JNIEnv *env, jclass,
 }
 
 extern "C"
-JNIEXPORT void JNICALL
-Java_com_libyuv_util_YuvUtil_mirrorI420(JNIEnv *env, jclass,
+JNIEXPORT jint JNICALL
+Java_xyz_rinc_roid_yuv_YuvUtil_nativeMirrorI420(JNIEnv *env, jclass,
                                                             jbyteArray src_bytes, jint width,
                                                             jint height, jbyteArray dst_bytes) {
     YUV src(env, src_bytes, width, height);
     YUV dst(env, dst_bytes, width, height);
 
-    I420Mirror(src.y, src.y_stride,
+    return I420Mirror(src.y, src.y_stride,
                src.u, src.u_stride,
                src.v, src.v_stride,
                dst.y, dst.y_stride,
@@ -104,8 +104,8 @@ Java_com_libyuv_util_YuvUtil_mirrorI420(JNIEnv *env, jclass,
 }
 
 extern "C"
-JNIEXPORT void JNICALL
-Java_com_libyuv_util_YuvUtil_scaleI420(JNIEnv *env, jclass,
+JNIEXPORT jint JNICALL
+Java_xyz_rinc_roid_yuv_YuvUtil_nativeScaleI420(JNIEnv *env, jclass,
                                                            jbyteArray src_bytes, jint src_width,
                                                            jint src_height, jbyteArray dst_bytes,
                                                            jint dst_width, jint dst_height,
@@ -113,7 +113,7 @@ Java_com_libyuv_util_YuvUtil_scaleI420(JNIEnv *env, jclass,
     YUV src(env, src_bytes, src_width, src_height);
     YUV dst(env, dst_bytes, dst_width, dst_height);
 
-    I420Scale(src.y, src.y_stride,
+    return I420Scale(src.y, src.y_stride,
               src.u, src.u_stride,
               src.v, src.v_stride,
               src_width, src_height,
