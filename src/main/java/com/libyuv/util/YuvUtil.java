@@ -1,4 +1,4 @@
-package com.libyuv.util;
+package xyz.rinc.roid.yuv;
 
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
