@@ -33,132 +33,141 @@ public class YuvUtil {
         Clockwise270
     }
 
-    public static byte[] imageToYuvBytes(Image image, YuvFormat yuvFormat) {
-        Rect crop = image.getCropRect();
-        int width = crop.width();
-        int height = crop.height();
-        Image.Plane[] planes = image.getPlanes();
-        byte[] yuv_bytes = new byte[width * height * ImageFormat.getBitsPerPixel(image.getFormat()) / 8];
-        byte[] row_bytes = new byte[planes[0].getRowStride()];
-        int channelOffset = 0;
-        int outputStride = 1;
-        for (int i = 0; i < planes.length; i++) {
-            switch (i) {
-                case 0: {
-                    channelOffset = 0;
-                    outputStride = 1;
-                    break;
-                }
-                case 1: {
-                    if (yuvFormat == YuvFormat.I420) {
-                        channelOffset = width * height;
+    public static boolean imageToYuvBytes(Image image, YuvFormat yuvFormat, byte[] yuv_bytes) {
+        try {
+            Rect crop = image.getCropRect();
+            int width = crop.width();
+            int height = crop.height();
+            Image.Plane[] planes = image.getPlanes();
+            byte[] row_bytes = new byte[planes[0].getRowStride()];
+            int channelOffset = 0;
+            int outputStride = 1;
+            ByteBuffer buffer;
+            for (int i = 0; i < planes.length; i++) {
+                switch (i) {
+                    case 0: {
+                        channelOffset = 0;
                         outputStride = 1;
+                        break;
+                    }
+                    case 1: {
+                        if (yuvFormat == YuvFormat.I420) {
+                            channelOffset = width * height;
+                            outputStride = 1;
+                        } else {
+                            channelOffset = width * height + 1;
+                            outputStride = 2;
+                        }
+                        break;
+                    }
+                    case 2: {
+                        if (yuvFormat == YuvFormat.I420) {
+                            channelOffset = width * height * 5 / 4;
+                            outputStride = 1;
+                        } else {
+                            channelOffset = width * height;
+                            outputStride = 2;
+                        }
+                        break;
+                    }
+                }
+                buffer = planes[i].getBuffer();
+                int rowStride = planes[i].getRowStride();
+                int pixelStride = planes[i].getPixelStride();
+                int shift = (i == 0) ? 0 : 1;
+                int w = width >> shift;
+                int h = height >> shift;
+                buffer.position(rowStride * (crop.top >> shift) + pixelStride * (crop.left >> shift));
+                for (int row = 0; row < h; row++) {
+                    int length;
+                    if (pixelStride == 1 && outputStride == 1) {
+                        length = w;
+                        buffer.get(yuv_bytes, channelOffset, length);
+                        channelOffset += length;
                     } else {
-                        channelOffset = width * height + 1;
-                        outputStride = 2;
+                        length = (w - 1) * pixelStride + 1;
+                        buffer.get(row_bytes, 0, length);
+                        for (int col = 0; col < w; col++) {
+                            yuv_bytes[channelOffset] = row_bytes[col * pixelStride];
+                            channelOffset += outputStride;
+                        }
                     }
-                    break;
-                }
-                case 2: {
-                    if (yuvFormat == YuvFormat.I420) {
-                        channelOffset = width * height * 5 / 4;
-                        outputStride = 1;
-                    } else {
-                        channelOffset = width * height;
-                        outputStride = 2;
+                    if (row < h - 1) {
+                        buffer.position(buffer.position() + rowStride - length);
                     }
-                    break;
                 }
+                buffer.clear();
             }
-            ByteBuffer buffer = planes[i].getBuffer();
-            int rowStride = planes[i].getRowStride();
-            int pixelStride = planes[i].getPixelStride();
-            int shift = (i == 0) ? 0 : 1;
-            int w = width >> shift;
-            int h = height >> shift;
-            buffer.position(rowStride * (crop.top >> shift) + pixelStride * (crop.left >> shift));
-            for (int row = 0; row < h; row++) {
-                int length;
-                if (pixelStride == 1 && outputStride == 1) {
-                    length = w;
-                    buffer.get(yuv_bytes, channelOffset, length);
-                    channelOffset += length;
-                } else {
-                    length = (w - 1) * pixelStride + 1;
-                    buffer.get(row_bytes, 0, length);
-                    for (int col = 0; col < w; col++) {
-                        yuv_bytes[channelOffset] = row_bytes[col * pixelStride];
-                        channelOffset += outputStride;
-                    }
-                }
-                if (row < h - 1) {
-                    buffer.position(buffer.position() + rowStride - length);
-                }
-            }
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         }
-        return yuv_bytes;
     }
     
-    public static byte[] compressToJpeg(byte[] data, int format, int width, int height, Rect cropRect) {
+    public static byte[] yuv2Jpeg(byte[] data, int format, final int width, final int height, Rect cropRect) {
+        byte[] bytes = null;
         if (cropRect == null) cropRect = new Rect(0, 0, width, height);
-        final YuvImage yuvImg = new YuvImage(data, format, width, height, null);
         ByteArrayOutputStream baos = new ByteArrayOutputStream(data.length);
-        if (yuvImg.compressToJpeg(cropRect, 100, baos)) {
-            return baos.toByteArray();
+        try {
+            if (new YuvImage(data, format, width, height, null).compressToJpeg(cropRect, 100, baos)) {
+                bytes = baos.toByteArray();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        return null;
-    }
-
-    public static byte[] I420ToNV21(byte[] i420_bytes, int width, int height) {
-        return handleYUVBytes(width, height, (dst_bytes)->I420ToNV21(i420_bytes, dst_bytes, width, height));
-    }
-
-    public static byte[] NV21ToI420(byte[] nv21_bytes, int width, int height) {
-        return handleYUVBytes(width, height, (dst_bytes)->NV21ToI420(nv21_bytes, dst_bytes, width, height));
-    }
-
-    public static byte[] rotateI420(byte[] src_bytes, int width, int height, RotateMode mode) {
-        return handleYUVBytes(width, height, (dst_bytes)->{
-            int degree = 0;
-            switch (mode) {
-                case Clockwise270: degree += 90;
-                case Clockwise180: degree += 90;
-                case Clockwise90: degree += 90;
+        if (baos != null) {
+            try {
+                baos.close();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            rotateI420(src_bytes, width, height, dst_bytes, degree);
-        });
+        }
+        return bytes;
     }
 
-    public static byte[] mirrorI420(byte[] src_bytes, int width, int height) {
-        return handleYUVBytes(width, height, (dst_bytes)->mirrorI420(src_bytes, width, height, dst_bytes));
+    public static int I420ToNV21(byte[] i420_bytes, int width, int height, byte[] dst_bytes) {
+        if (dst_bytes == null) dst_bytes = new byte[width * height * 3 / 2];
+        return nativeI420ToNV21(i420_bytes, dst_bytes, width, height);
     }
 
-    public static byte[] scaleI420(byte[] src_bytes, int src_width, int src_height, int dst_width, int dst_height, FilterMode filter_mode) {
-        return handleYUVBytes(dst_width, dst_height, (dst_bytes)->{
-            int mode = 0;
-            switch (filter_mode) {
-                case Box: ++mode;
-                case Bilinear: ++mode;
-                case Linear: ++mode;
-                case None:
-            }
-            scaleI420(src_bytes, src_width, src_height, dst_bytes, dst_width, dst_height, mode);
-        });
+    public static int NV21ToI420(byte[] nv21_bytes, int width, int height, byte[] dst_bytes) {
+        if (dst_bytes == null) dst_bytes = new byte[width * height * 3 / 2];
+        return nativeNV21ToI420(nv21_bytes, dst_bytes, width, height);
     }
 
-    private interface YUVOperation {
-        void operate(byte[] dst_bytes);
+    public static int rotateI420(byte[] src_bytes, int width, int height, RotateMode mode, byte[] dst_bytes) {
+        if (mode == RotateMode.Clockwise0) return Integer.MIN_VALUE;
+        if (dst_bytes == null) dst_bytes = new byte[width * height * 3 / 2];
+        int degree = 0;
+        switch (mode) {
+            case Clockwise270: degree += 90;
+            case Clockwise180: degree += 90;
+            case Clockwise90: degree += 90;
+        }
+        return nativeRotateI420(src_bytes, width, height, dst_bytes, degree);
     }
 
-    private static byte[] handleYUVBytes(int dst_width, int dst_height, YUVOperation op) {
-        byte[] dst_bytes = new byte[dst_width * dst_height * 3 / 2];
-        op.operate(dst_bytes);
-        return dst_bytes;
+    public static int mirrorI420(byte[] src_bytes, int width, int height, byte[] dst_bytes) {
+        if (dst_bytes == null) dst_bytes = new byte[width * height * 3 / 2];
+        return nativeMirrorI420(src_bytes, width, height, dst_bytes);
     }
 
-    private static native void I420ToNV21(byte[] i420_bytes, byte[] nv21_bytes, int width, int height);
-    private static native void NV21ToI420(byte[] nv21_bytes, byte[] i420_bytes, int width, int height);
-    private static native void rotateI420(byte[] src_bytes, int width, int height, byte[] dst_bytes, int degree);
-    private static native void mirrorI420(byte[] src_bytes, int width, int height, byte[] dst_bytes);
-    private static native void scaleI420(byte[] src_bytes, int src_width, int src_height, byte[] dst_bytes, int dst_width, int dst_height, int filter_mode);
+    public static int scaleI420(byte[] src_bytes, int src_width, int src_height, int dst_width, int dst_height, FilterMode filter_mode, byte[] dst_bytes) {
+        if (dst_bytes == null) dst_bytes = new byte[Math.max(src_width * src_height, dst_width * dst_height) * 3 / 2];
+        int mode = 0;
+        switch (filter_mode) {
+            case Box: ++mode;
+            case Bilinear: ++mode;
+            case Linear: ++mode;
+            case None:
+        }
+        return nativeScaleI420(src_bytes, src_width, src_height, dst_bytes, dst_width, dst_height, mode);
+    }
+
+    private static native int nativeI420ToNV21(byte[] i420_bytes, byte[] nv21_bytes, int width, int height);
+    private static native int nativeNV21ToI420(byte[] nv21_bytes, byte[] i420_bytes, int width, int height);
+    private static native int nativeRotateI420(byte[] src_bytes, int width, int height, byte[] dst_bytes, int degree);
+    private static native int nativeMirrorI420(byte[] src_bytes, int width, int height, byte[] dst_bytes);
+    private static native int nativeScaleI420(byte[] src_bytes, int src_width, int src_height, byte[] dst_bytes, int dst_width, int dst_height, int filter_mode);
 }
