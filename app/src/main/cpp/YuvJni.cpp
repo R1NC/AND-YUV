@@ -1,5 +1,14 @@
 #include <jni.h>
 #include <libyuv.h>
+#include <android/bitmap.h>
+#include <android/log.h>
+
+#define TAG "LibYUV-JNI" // 这个是自定义的LOG的标识
+#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG,TAG ,__VA_ARGS__)
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO,TAG ,__VA_ARGS__)
+#define LOGW(...) __android_log_print(ANDROID_LOG_WARN,TAG ,__VA_ARGS__)
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,TAG ,__VA_ARGS__)
+#define LOGF(...) __android_log_print(ANDROID_LOG_FATAL,TAG ,__VA_ARGS__)
 
 using namespace libyuv;
 
@@ -31,6 +40,53 @@ public:
         env->ReleaseByteArrayElements(jba, data, JNI_ABORT);
     }
 };
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_com_tencent_sppd_yuv_YuvUtil_nativeBitmapToI420(JNIEnv *env, jclass,
+                                                     jobject bitmap, jbyteArray i420_bytes) {
+    AndroidBitmapInfo bitmapInfo;
+    int ret;
+
+    if ((ret = AndroidBitmap_getInfo(env, bitmap, &bitmapInfo)) < 0) {
+        LOGE("AndroidBitmap_getInfo() error:%d", ret);
+        return -1;
+    }
+
+    void *argb_array = NULL;
+
+    if ((ret = AndroidBitmap_lockPixels(env, bitmap, &argb_array)) < 0) {
+        LOGE("AndroidBitmap_lockPixels() error:%d", ret);
+        return -3;
+    }
+
+    int width = bitmapInfo.width, height = bitmapInfo.height;
+
+    YUV i420(env, i420_bytes, width, height);
+
+    if (bitmapInfo.format == ANDROID_BITMAP_FORMAT_RGBA_8888) {
+        return ARGBToI420((const u_int8_t *) argb_array, bitmapInfo.stride,
+                i420.y, i420.y_stride,
+                i420.u, i420.u_stride,
+                i420.v, i420.v_stride,
+                width, height);
+    } else if (bitmapInfo.format == ANDROID_BITMAP_FORMAT_RGBA_4444) {
+        return ARGB4444ToI420((const u_int8_t *) argb_array, bitmapInfo.stride,
+                i420.y, i420.y_stride,
+                i420.u, i420.u_stride,
+                i420.v, i420.v_stride,
+                width, height);
+    } else if (bitmapInfo.format == ANDROID_BITMAP_FORMAT_RGB_565) {
+        return RGB565ToI420((const u_int8_t *) argb_array, bitmapInfo.stride,
+                i420.y, i420.y_stride,
+                i420.u, i420.u_stride,
+                i420.v, i420.v_stride,
+                width, height);
+    } else {
+        LOGE("Unsupported format!");
+        return -4;
+    }
+}
 
 extern "C"
 JNIEXPORT jint JNICALL
