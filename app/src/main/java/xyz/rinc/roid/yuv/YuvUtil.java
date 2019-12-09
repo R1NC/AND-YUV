@@ -1,5 +1,6 @@
 package xyz.rinc.roid.yuv;
 
+import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
@@ -126,17 +127,29 @@ public class YuvUtil {
         return bytes;
     }
 
+    public static int bitmapToI420(Bitmap bitmap, byte[] dst_bytes) {
+        if (bitmap == null || bitmap.isRecycled()
+                || (bitmap.getConfig() != Bitmap.Config.ARGB_8888 && bitmap.getConfig() != Bitmap.Config.ARGB_4444 && bitmap.getConfig() != Bitmap.Config.RGB_565)) return Integer.MIN_VALUE;
+        if (dst_bytes == null) dst_bytes = new byte[bitmap.getWidth() * bitmap.getHeight() * 3 / 2];
+        int ret = nativeBitmapToI420(bitmap, dst_bytes);
+        bitmap.recycle();
+        return ret;
+    }
+
     public static int I420ToNV21(byte[] i420_bytes, int width, int height, byte[] dst_bytes) {
+        if (i420_bytes == null || width <= 0 || height <= 0) return Integer.MIN_VALUE;
         if (dst_bytes == null) dst_bytes = new byte[width * height * 3 / 2];
         return nativeI420ToNV21(i420_bytes, dst_bytes, width, height);
     }
 
     public static int NV21ToI420(byte[] nv21_bytes, int width, int height, byte[] dst_bytes) {
+        if (nv21_bytes == null || width <= 0 || height <= 0) return Integer.MIN_VALUE;
         if (dst_bytes == null) dst_bytes = new byte[width * height * 3 / 2];
         return nativeNV21ToI420(nv21_bytes, dst_bytes, width, height);
     }
 
     public static int rotateI420(byte[] src_bytes, int width, int height, RotateMode mode, byte[] dst_bytes) {
+        if (src_bytes == null || width <= 0 || height <= 0) return Integer.MIN_VALUE;
         if (mode == RotateMode.Clockwise0) return Integer.MIN_VALUE;
         if (dst_bytes == null) dst_bytes = new byte[width * height * 3 / 2];
         int degree = 0;
@@ -149,11 +162,13 @@ public class YuvUtil {
     }
 
     public static int mirrorI420(byte[] src_bytes, int width, int height, byte[] dst_bytes) {
+        if (src_bytes == null || width <= 0 || height <= 0) return Integer.MIN_VALUE;
         if (dst_bytes == null) dst_bytes = new byte[width * height * 3 / 2];
         return nativeMirrorI420(src_bytes, width, height, dst_bytes);
     }
 
     public static int scaleI420(byte[] src_bytes, int src_width, int src_height, int dst_width, int dst_height, FilterMode filter_mode, byte[] dst_bytes) {
+        if (src_bytes == null || src_width <= 0 || src_height <= 0 || dst_width <= 0 || dst_height <= 0) return Integer.MIN_VALUE;
         if (dst_bytes == null) dst_bytes = new byte[Math.max(src_width * src_height, dst_width * dst_height) * 3 / 2];
         int mode = 0;
         switch (filter_mode) {
@@ -165,6 +180,7 @@ public class YuvUtil {
         return nativeScaleI420(src_bytes, src_width, src_height, dst_bytes, dst_width, dst_height, mode);
     }
 
+    private static native int nativeBitmapToI420(Bitmap bitmap, byte[] i420_bytes);
     private static native int nativeI420ToNV21(byte[] i420_bytes, byte[] nv21_bytes, int width, int height);
     private static native int nativeNV21ToI420(byte[] nv21_bytes, byte[] i420_bytes, int width, int height);
     private static native int nativeRotateI420(byte[] src_bytes, int width, int height, byte[] dst_bytes, int degree);
