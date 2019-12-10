@@ -128,8 +128,7 @@ public class YuvUtil {
     }
 
     public static int bitmapToI420(Bitmap bitmap, byte[] dst_bytes) {
-        if (bitmap == null || bitmap.isRecycled()
-                || (bitmap.getConfig() != Bitmap.Config.ARGB_8888 && bitmap.getConfig() != Bitmap.Config.ARGB_4444 && bitmap.getConfig() != Bitmap.Config.RGB_565)) return Integer.MIN_VALUE;
+        if (bitmap == null || bitmap.isRecycled() || bitmap.getConfig() != Bitmap.Config.ARGB_8888) return Integer.MIN_VALUE;
         if (dst_bytes == null) dst_bytes = new byte[bitmap.getWidth() * bitmap.getHeight() * 3 / 2];
         int ret = nativeBitmapToI420(bitmap, dst_bytes);
         bitmap.recycle();
