@@ -57,7 +57,7 @@ Java_com_tencent_sppd_yuv_YuvUtil_nativeBitmapToI420(JNIEnv *env, jclass,
 
     if ((ret = AndroidBitmap_lockPixels(env, bitmap, &argb_array)) < 0) {
         LOGE("AndroidBitmap_lockPixels() error:%d", ret);
-        return -3;
+        return -2;
     }
 
     int width = bitmapInfo.width, height = bitmapInfo.height;
@@ -65,27 +65,31 @@ Java_com_tencent_sppd_yuv_YuvUtil_nativeBitmapToI420(JNIEnv *env, jclass,
     YUV i420(env, i420_bytes, width, height);
 
     if (bitmapInfo.format == ANDROID_BITMAP_FORMAT_RGBA_8888) {
-        return ARGBToI420((const u_int8_t *) argb_array, bitmapInfo.stride,
+        ret = ARGBToI420((const u_int8_t *) argb_array, bitmapInfo.stride,
                 i420.y, i420.y_stride,
                 i420.u, i420.u_stride,
                 i420.v, i420.v_stride,
                 width, height);
     } else if (bitmapInfo.format == ANDROID_BITMAP_FORMAT_RGBA_4444) {
-        return ARGB4444ToI420((const u_int8_t *) argb_array, bitmapInfo.stride,
+        ret = ARGB4444ToI420((const u_int8_t *) argb_array, bitmapInfo.stride,
                 i420.y, i420.y_stride,
                 i420.u, i420.u_stride,
                 i420.v, i420.v_stride,
                 width, height);
     } else if (bitmapInfo.format == ANDROID_BITMAP_FORMAT_RGB_565) {
-        return RGB565ToI420((const u_int8_t *) argb_array, bitmapInfo.stride,
+        ret = RGB565ToI420((const u_int8_t *) argb_array, bitmapInfo.stride,
                 i420.y, i420.y_stride,
                 i420.u, i420.u_stride,
                 i420.v, i420.v_stride,
                 width, height);
     } else {
         LOGE("Unsupported format!");
-        return -4;
+        ret = -3;
     }
+
+    AndroidBitmap_unlockPixels(env, bitmap);
+
+    return ret;
 }
 
 extern "C"
