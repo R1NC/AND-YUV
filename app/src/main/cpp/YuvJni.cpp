@@ -52,30 +52,31 @@ Java_com_tencent_sppd_yuv_YuvUtil_nativeBitmapToI420(JNIEnv *env, jclass,
         LOGE("AndroidBitmap_getInfo() error:%d", ret);
         return -1;
     }
-    int width = bitmapInfo.width, height = bitmapInfo.height;
+    int width = bitmapInfo.width, height = bitmapInfo.height, stride = bitmapInfo.stride, format = bitmapInfo.format;
 
-    void *argb_bytes = nullptr;
-    if ((ret = AndroidBitmap_lockPixels(env, bitmap, &argb_bytes)) < 0) {
+    void *pixels = nullptr;
+    if ((ret = AndroidBitmap_lockPixels(env, bitmap, &pixels)) < 0) {
         LOGE("AndroidBitmap_lockPixels() error:%d", ret);
         return -2;
     }
+    const u_int8_t *argb_bytes = (const u_int8_t *) pixels;
 
     YUV i420(env, i420_bytes, width, height);
 
-    if (bitmapInfo.format == ANDROID_BITMAP_FORMAT_RGBA_8888) {
-        ret = ARGBToI420((const u_int8_t *) argb_bytes, bitmapInfo.stride,
+    if (format == ANDROID_BITMAP_FORMAT_RGBA_8888) {
+        ret = ARGBToI420(argb_bytes, stride,
                 i420.y, i420.y_stride,
                 i420.u, i420.u_stride,
                 i420.v, i420.v_stride,
                 width, height);
-    } else if (bitmapInfo.format == ANDROID_BITMAP_FORMAT_RGBA_4444) {
-        ret = ARGB4444ToI420((const u_int8_t *) argb_bytes, bitmapInfo.stride,
+    } else if (format == ANDROID_BITMAP_FORMAT_RGBA_4444) {
+        ret = ARGB4444ToI420(argb_bytes, stride,
                 i420.y, i420.y_stride,
                 i420.u, i420.u_stride,
                 i420.v, i420.v_stride,
                 width, height);
-    } else if (bitmapInfo.format == ANDROID_BITMAP_FORMAT_RGB_565) {
-        ret = RGB565ToI420((const u_int8_t *) argb_bytes, bitmapInfo.stride,
+    } else if (format == ANDROID_BITMAP_FORMAT_RGB_565) {
+        ret = RGB565ToI420(argb_bytes, stride,
                 i420.y, i420.y_stride,
                 i420.u, i420.u_stride,
                 i420.v, i420.v_stride,
