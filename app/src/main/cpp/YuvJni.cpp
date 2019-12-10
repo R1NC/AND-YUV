@@ -45,39 +45,37 @@ extern "C"
 JNIEXPORT jint JNICALL
 Java_com_tencent_sppd_yuv_YuvUtil_nativeBitmapToI420(JNIEnv *env, jclass,
                                                      jobject bitmap, jbyteArray i420_bytes) {
-    AndroidBitmapInfo bitmapInfo;
     int ret;
 
+    AndroidBitmapInfo bitmapInfo;
     if ((ret = AndroidBitmap_getInfo(env, bitmap, &bitmapInfo)) < 0) {
         LOGE("AndroidBitmap_getInfo() error:%d", ret);
         return -1;
     }
+    int width = bitmapInfo.width, height = bitmapInfo.height;
 
-    void *argb_array = NULL;
-
-    if ((ret = AndroidBitmap_lockPixels(env, bitmap, &argb_array)) < 0) {
+    void *argb_bytes = nullptr;
+    if ((ret = AndroidBitmap_lockPixels(env, bitmap, &argb_bytes)) < 0) {
         LOGE("AndroidBitmap_lockPixels() error:%d", ret);
         return -2;
     }
 
-    int width = bitmapInfo.width, height = bitmapInfo.height;
-
     YUV i420(env, i420_bytes, width, height);
 
     if (bitmapInfo.format == ANDROID_BITMAP_FORMAT_RGBA_8888) {
-        ret = ARGBToI420((const u_int8_t *) argb_array, bitmapInfo.stride,
+        ret = ARGBToI420((const u_int8_t *) argb_bytes, bitmapInfo.stride,
                 i420.y, i420.y_stride,
                 i420.u, i420.u_stride,
                 i420.v, i420.v_stride,
                 width, height);
     } else if (bitmapInfo.format == ANDROID_BITMAP_FORMAT_RGBA_4444) {
-        ret = ARGB4444ToI420((const u_int8_t *) argb_array, bitmapInfo.stride,
+        ret = ARGB4444ToI420((const u_int8_t *) argb_bytes, bitmapInfo.stride,
                 i420.y, i420.y_stride,
                 i420.u, i420.u_stride,
                 i420.v, i420.v_stride,
                 width, height);
     } else if (bitmapInfo.format == ANDROID_BITMAP_FORMAT_RGB_565) {
-        ret = RGB565ToI420((const u_int8_t *) argb_array, bitmapInfo.stride,
+        ret = RGB565ToI420((const u_int8_t *) argb_bytes, bitmapInfo.stride,
                 i420.y, i420.y_stride,
                 i420.u, i420.u_stride,
                 i420.v, i420.v_stride,
