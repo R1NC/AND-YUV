@@ -1,14 +1,6 @@
 #include <jni.h>
 #include <libyuv.h>
 #include <android/bitmap.h>
-#include <android/log.h>
-
-#define TAG "LibYUV-JNI"
-#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG,TAG ,__VA_ARGS__)
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO,TAG ,__VA_ARGS__)
-#define LOGW(...) __android_log_print(ANDROID_LOG_WARN,TAG ,__VA_ARGS__)
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,TAG ,__VA_ARGS__)
-#define LOGF(...) __android_log_print(ANDROID_LOG_FATAL,TAG ,__VA_ARGS__)
 
 using namespace libyuv;
 
@@ -45,18 +37,14 @@ extern "C"
 JNIEXPORT jint JNICALL
 Java_com_tencent_sppd_yuv_YuvUtil_nativeBitmapToI420(JNIEnv *env, jclass,
                                                      jobject bitmap, jbyteArray i420_bytes) {
-    
-
     AndroidBitmapInfo bitmapInfo;
     if (AndroidBitmap_getInfo(env, bitmap, &bitmapInfo) < 0) {
-        LOGE("AndroidBitmap_getInfo() error:%d", ret);
         return -1;
     }
     int width = bitmapInfo.width, height = bitmapInfo.height, stride = bitmapInfo.stride, format = bitmapInfo.format;
 
     void *pixels = nullptr;
     if (AndroidBitmap_lockPixels(env, bitmap, &pixels) < 0) {
-        LOGE("AndroidBitmap_lockPixels() error:%d", ret);
         return -2;
     }
     const u_int8_t *argb_bytes = (const u_int8_t *) pixels;
@@ -71,8 +59,7 @@ Java_com_tencent_sppd_yuv_YuvUtil_nativeBitmapToI420(JNIEnv *env, jclass,
                 i420.v, i420.v_stride,
                 width, height);
     } else {
-        LOGE("Unsupported format!");
-        ret = -3;
+        return -3;
     }
 
     AndroidBitmap_unlockPixels(env, bitmap);
