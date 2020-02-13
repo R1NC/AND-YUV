@@ -106,12 +106,13 @@ public class YuvUtil {
         }
     }
     
-    public static byte[] yuv2Jpeg(byte[] data, int format, final int width, final int height, Rect cropRect) {
+    public static byte[] yuv2Jpeg(byte[] data, int format, final Size size, Rect cropRect) {
+        if (data == null || data.length <=0 || size == null || size.getWidth() == 0 || size.getHeight() == 0) return null;
         byte[] bytes = null;
-        if (cropRect == null) cropRect = new Rect(0, 0, width, height);
+        if (cropRect == null) cropRect = new Rect(0, 0, size.getWidth(), size.getHeight());
         ByteArrayOutputStream baos = new ByteArrayOutputStream(data.length);
         try {
-            if (new YuvImage(data, format, width, height, null).compressToJpeg(cropRect, 100, baos)) {
+            if (new YuvImage(data, format, size.getWidth(), size.getHeight(),null).compressToJpeg(cropRect, 100, baos)) {
                 bytes = baos.toByteArray();
             }
         } catch (Exception e) {
@@ -135,40 +136,46 @@ public class YuvUtil {
         return ret;
     }
 
-    public static int I420ToNV21(byte[] i420_bytes, int width, int height, byte[] dst_bytes) {
-        if (i420_bytes == null || width <= 0 || height <= 0) return Integer.MIN_VALUE;
-        if (dst_bytes == null) dst_bytes = new byte[width * height * 3 / 2];
-        return nativeI420ToNV21(i420_bytes, dst_bytes, width, height);
+    public static int I420ToNV21(byte[] i420_bytes, Size size, byte[] dst_bytes) {
+        if (i420_bytes == null || i420_bytes.length <= 0
+                || size == null || size.getWidth() <= 0 || size.getHeight() <= 0) return Integer.MIN_VALUE;
+        if (dst_bytes == null) dst_bytes = new byte[size.getWidth() * size.getHeight() * 3 / 2];
+        return nativeI420ToNV21(i420_bytes, dst_bytes, size.getWidth(), size.getHeight());
     }
 
-    public static int NV21ToI420(byte[] nv21_bytes, int width, int height, byte[] dst_bytes) {
-        if (nv21_bytes == null || width <= 0 || height <= 0) return Integer.MIN_VALUE;
-        if (dst_bytes == null) dst_bytes = new byte[width * height * 3 / 2];
-        return nativeNV21ToI420(nv21_bytes, dst_bytes, width, height);
+    public static int NV21ToI420(byte[] nv21_bytes, Size size, byte[] dst_bytes) {
+        if (nv21_bytes == null || nv21_bytes.length <= 0
+                || size == null || size.getWidth() <= 0 || size.getHeight() <= 0) return Integer.MIN_VALUE;
+        if (dst_bytes == null) dst_bytes = new byte[size.getWidth() * size.getHeight() * 3 / 2];
+        return nativeNV21ToI420(nv21_bytes, dst_bytes, size.getWidth(), size.getHeight());
     }
 
-    public static int rotateI420(byte[] src_bytes, int width, int height, RotateMode mode, byte[] dst_bytes) {
-        if (src_bytes == null || width <= 0 || height <= 0) return Integer.MIN_VALUE;
-        if (mode == RotateMode.Clockwise0) return Integer.MIN_VALUE;
-        if (dst_bytes == null) dst_bytes = new byte[width * height * 3 / 2];
+    public static int rotateI420(byte[] src_bytes, Size size, RotateMode mode, byte[] dst_bytes) {
+        if (src_bytes == null || src_bytes.length <= 0
+                || size == null || size.getWidth() <= 0 || size.getHeight() <= 0) return Integer.MIN_VALUE;
+        if (mode == RotateMode.None) return 0;
+        if (dst_bytes == null) dst_bytes = new byte[size.getWidth() * size.getHeight() * 3 / 2];
         int degree = 0;
         switch (mode) {
             case Clockwise270: degree += 90;
             case Clockwise180: degree += 90;
             case Clockwise90: degree += 90;
         }
-        return nativeRotateI420(src_bytes, width, height, dst_bytes, degree);
+        return nativeRotateI420(src_bytes,size.getWidth(), size.getHeight(), dst_bytes, degree);
     }
 
-    public static int mirrorI420(byte[] src_bytes, int width, int height, byte[] dst_bytes) {
-        if (src_bytes == null || width <= 0 || height <= 0) return Integer.MIN_VALUE;
-        if (dst_bytes == null) dst_bytes = new byte[width * height * 3 / 2];
-        return nativeMirrorI420(src_bytes, width, height, dst_bytes);
+    public static int mirrorI420(byte[] src_bytes, Size size, byte[] dst_bytes) {
+        if (src_bytes == null || src_bytes.length <= 0
+                || size == null || size.getWidth() <= 0 || size.getHeight() <= 0) return Integer.MIN_VALUE;
+        if (dst_bytes == null) dst_bytes = new byte[size.getWidth() * size.getHeight() * 3 / 2];
+        return nativeMirrorI420(src_bytes, size.getWidth(), size.getHeight(), dst_bytes);
     }
 
-    public static int scaleI420(byte[] src_bytes, int src_width, int src_height, int dst_width, int dst_height, FilterMode filter_mode, byte[] dst_bytes) {
-        if (src_bytes == null || src_width <= 0 || src_height <= 0 || dst_width <= 0 || dst_height <= 0) return Integer.MIN_VALUE;
-        if (dst_bytes == null) dst_bytes = new byte[Math.max(src_width * src_height, dst_width * dst_height) * 3 / 2];
+    public static int scaleI420(byte[] src_bytes, Size src_size, Size dst_size, FilterMode filter_mode, byte[] dst_bytes) {
+        if (src_bytes == null || src_bytes.length <= 0
+                || src_size == null || src_size.getWidth() <= 0 || src_size.getHeight() <= 0
+                || dst_size == null || dst_size.getWidth() <= 0 || dst_size.getHeight() <= 0) return Integer.MIN_VALUE;
+        if (dst_bytes == null) dst_bytes = new byte[Math.max(src_size.getWidth() * src_size.getHeight(), dst_size.getWidth() * dst_size.getHeight()) * 3 / 2];
         int mode = 0;
         switch (filter_mode) {
             case Box: ++mode;
@@ -176,9 +183,9 @@ public class YuvUtil {
             case Linear: ++mode;
             case None:
         }
-        return nativeScaleI420(src_bytes, src_width, src_height, dst_bytes, dst_width, dst_height, mode);
+        return nativeScaleI420(src_bytes, src_size.getWidth(), src_size.getHeight(), dst_bytes, dst_size.getWidth(), dst_size.getHeight(), mode);
     }
-
+    
     private static native int nativeBitmapToI420(Bitmap bitmap, byte[] i420_bytes);
     private static native int nativeI420ToNV21(byte[] i420_bytes, byte[] nv21_bytes, int width, int height);
     private static native int nativeNV21ToI420(byte[] nv21_bytes, byte[] i420_bytes, int width, int height);
