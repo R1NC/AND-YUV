@@ -107,7 +107,8 @@ public class YuvUtil {
     }
     
     public static byte[] yuv2Jpeg(byte[] data, int format, final Size size, Rect cropRect) {
-        if (data == null || data.length <=0 || size == null || size.getWidth() == 0 || size.getHeight() == 0) return null;
+        if (data == null || data.length <=0 
+            || size == null || size.getWidth() == 0 || size.getHeight() == 0) return null;
         byte[] bytes = null;
         if (cropRect == null) cropRect = new Rect(0, 0, size.getWidth(), size.getHeight());
         ByteArrayOutputStream baos = new ByteArrayOutputStream(data.length);
