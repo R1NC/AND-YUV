@@ -107,7 +107,7 @@ public class YuvUtil {
     }
     
     public static byte[] yuv2Jpeg(byte[] data, int format, final Size size, Rect cropRect, int quality) {
-        if (data == null || data.length <=0 || size == null || size.getWidth() == 0 || size.getHeight() == 0) return null;
+        if (data == null || data.length <=0 || size == null || size.getWidth() == 0 || size.getHeight() == 0 || quality <= 0 || quality > 100) return null;
         byte[] bytes = null;
 
         byte[] nv21_bytes = null;
