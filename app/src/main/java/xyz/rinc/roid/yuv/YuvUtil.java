@@ -106,14 +106,20 @@ public class YuvUtil {
         }
     }
     
-    public static byte[] yuv2Jpeg(byte[] data, int format, final Size size, Rect cropRect) {
-        if (data == null || data.length <=0 
-            || size == null || size.getWidth() == 0 || size.getHeight() == 0) return null;
+    public static byte[] yuv2Jpeg(byte[] data, int format, final Size size, Rect cropRect, int quality) {
+        if (data == null || data.length <=0 || size == null || size.getWidth() == 0 || size.getHeight() == 0) return null;
         byte[] bytes = null;
+
+        byte[] nv21_bytes = null;
+        if (format == ImageFormat.YUV_420_888) {
+            nv21_bytes = new byte[data.length];
+            YuvUtil.I420ToNV21(data, size, nv21_bytes);
+        }
+
         if (cropRect == null) cropRect = new Rect(0, 0, size.getWidth(), size.getHeight());
         ByteArrayOutputStream baos = new ByteArrayOutputStream(data.length);
         try {
-            if (new YuvImage(data, format, size.getWidth(), size.getHeight(),null).compressToJpeg(cropRect, 100, baos)) {
+            if (new YuvImage(format == ImageFormat.YUV_420_888 ? nv21_bytes : data, format, size.getWidth(), size.getHeight(),null).compressToJpeg(cropRect, quality, baos)) {
                 bytes = baos.toByteArray();
             }
         } catch (Exception e) {
