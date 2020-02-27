@@ -114,12 +114,14 @@ public class YuvUtil {
         if (format == ImageFormat.YUV_420_888) {
             nv21_bytes = new byte[data.length];
             YuvUtil.I420ToNV21(data, size, nv21_bytes);
+            System.arraycopy(nv21_bytes, 0, data, 0, data.length);
+            format = ImageFormat.NV21;
         }
 
         if (cropRect == null) cropRect = new Rect(0, 0, size.getWidth(), size.getHeight());
         ByteArrayOutputStream baos = new ByteArrayOutputStream(data.length);
         try {
-            if (new YuvImage(format == ImageFormat.YUV_420_888 ? nv21_bytes : data, format, size.getWidth(), size.getHeight(),null).compressToJpeg(cropRect, quality, baos)) {
+            if (new YuvImage(data, format, size.getWidth(), size.getHeight(), null).compressToJpeg(cropRect, quality, baos)) {
                 bytes = baos.toByteArray();
             }
         } catch (Exception e) {
