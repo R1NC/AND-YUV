@@ -106,6 +106,7 @@ public class YuvUtil {
         }
     }
     
+    @Deprecated
     public static byte[] yuv2Jpeg(byte[] data, int format, final Size size, Rect cropRect, int quality) {
         if (data == null || data.length <=0 || size == null || size.getWidth() == 0 || size.getHeight() == 0 || quality <= 0 || quality > 100) return null;
         byte[] bytes = null;
@@ -136,6 +137,33 @@ public class YuvUtil {
         }
         return bytes;
     }
+    
+    /*
+    public static byte[] I420Compress(byte[] yuvBytes, Size size, Rect rect, Bitmap.Config config, Bitmap.CompressFormat format, int quality) {
+        Mat matYUV = new Mat(size.getHeight() * 3 / 2, size.getWidth(), CvType.CV_8UC1);
+        matYUV.put(0, 0, yuvBytes);
+
+        Mat matRGB = new Mat();
+        Imgproc.cvtColor(matYUV, matRGB, Imgproc.COLOR_YUV2RGB_IYUV);
+
+        Mat matRGBCropped = new Mat(matRGB, new org.opencv.core.Rect(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top));
+
+        Bitmap bmp = Bitmap.createBitmap(matRGBCropped.cols(), matRGBCropped.rows(), config);;
+        Utils.matToBitmap(matRGBCropped, bmp);
+
+        byte[] jpegBytes = null;
+        if (bmp != null && !bmp.isRecycled()) {
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                bmp.compress(format, quality, baos);
+                jpegBytes = baos.toByteArray();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            bmp.recycle();
+        }
+
+        return jpegBytes;
+    }*/
 
     public static int bitmapToI420(Bitmap bitmap, byte[] dst_bytes) {
         if (bitmap == null || bitmap.isRecycled() || bitmap.getConfig() != Bitmap.Config.ARGB_8888) return Integer.MIN_VALUE;
