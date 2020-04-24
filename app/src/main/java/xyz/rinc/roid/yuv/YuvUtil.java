@@ -139,7 +139,7 @@ public class YuvUtil {
     }
     
     /*
-    public static byte[] I420Compress(byte[] yuvBytes, Size size, Rect rect, Bitmap.Config config, Bitmap.CompressFormat format, int quality) {
+    public static byte[] I420ToJPG(byte[] yuvBytes, Size size, Rect rect, int quality) {
         Mat matYUV = new Mat(size.getHeight() * 3 / 2, size.getWidth(), CvType.CV_8UC1);
         matYUV.put(0, 0, yuvBytes);
 
@@ -148,21 +148,10 @@ public class YuvUtil {
 
         Mat matRGBCropped = new Mat(matRGB, new org.opencv.core.Rect(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top));
 
-        Bitmap bmp = Bitmap.createBitmap(matRGBCropped.cols(), matRGBCropped.rows(), config);;
-        Utils.matToBitmap(matRGBCropped, bmp);
+        MatOfByte matOfByte = new MatOfByte();
+        Imgcodecs.imencode(".jpg", matRGBCropped, matOfByte, new MatOfInt(IMWRITE_JPEG_QUALITY, quality));
 
-        byte[] jpegBytes = null;
-        if (bmp != null && !bmp.isRecycled()) {
-            try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-                bmp.compress(format, quality, baos);
-                jpegBytes = baos.toByteArray();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            bmp.recycle();
-        }
-
-        return jpegBytes;
+        return matOfByte.toArray();
     }*/
 
     public static int bitmapToI420(Bitmap bitmap, byte[] dst_bytes) {
