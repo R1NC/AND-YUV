@@ -23,87 +23,33 @@ public class YuvUtil {
         Box        // Highest quality.
     }
     
-    public enum YuvFormat {
-        NV21,
-        I420
-    }
-    
     public enum RotateMode {
         Clockwise90,
         Clockwise180,
         Clockwise270
     }
 
-    public static boolean imageToYuvBytes(Image image, YuvFormat yuvFormat, byte[] yuv_bytes) {
+    public static boolean I420WithImage(Image image, byte[] i420_bytes) {
         try {
-            Rect crop = image.getCropRect();
-            int width = crop.width();
-            int height = crop.height();
             Image.Plane[] planes = image.getPlanes();
-            byte[] row_bytes = new byte[planes[0].getRowStride()];
-            int channelOffset = 0;
-            int outputStride = 1;
-            ByteBuffer buffer;
-            for (int i = 0; i < planes.length; i++) {
-                switch (i) {
-                    case 0: {
-                        channelOffset = 0;
-                        outputStride = 1;
-                        break;
-                    }
-                    case 1: {
-                        if (yuvFormat == YuvFormat.I420) {
-                            channelOffset = width * height;
-                            outputStride = 1;
-                        } else {
-                            channelOffset = width * height + 1;
-                            outputStride = 2;
-                        }
-                        break;
-                    }
-                    case 2: {
-                        if (yuvFormat == YuvFormat.I420) {
-                            channelOffset = width * height * 5 / 4;
-                            outputStride = 1;
-                        } else {
-                            channelOffset = width * height;
-                            outputStride = 2;
-                        }
-                        break;
-                    }
+            if (planes.length >= 3) {
+                ByteBuffer bufferY = planes[0].getBuffer();
+                ByteBuffer bufferU = planes[1].getBuffer();
+                ByteBuffer bufferV = planes[2].getBuffer();
+                int lengthY = bufferY.remaining();
+                int lengthU = bufferU.remaining();
+                int lengthV = bufferV.remaining();
+                if (i420_bytes != null && i420_bytes.length >= lengthY + lengthU + lengthV) {
+                    bufferY.get(i420_bytes, 0, lengthY);
+                    bufferU.get(i420_bytes, lengthY, lengthU);
+                    bufferV.get(i420_bytes, lengthY + lengthU, lengthV);
+                    return true;
                 }
-                buffer = planes[i].getBuffer();
-                int rowStride = planes[i].getRowStride();
-                int pixelStride = planes[i].getPixelStride();
-                int shift = (i == 0) ? 0 : 1;
-                int w = width >> shift;
-                int h = height >> shift;
-                buffer.position(rowStride * (crop.top >> shift) + pixelStride * (crop.left >> shift));
-                for (int row = 0; row < h; row++) {
-                    int length;
-                    if (pixelStride == 1 && outputStride == 1) {
-                        length = w;
-                        buffer.get(yuv_bytes, channelOffset, length);
-                        channelOffset += length;
-                    } else {
-                        length = (w - 1) * pixelStride + 1;
-                        buffer.get(row_bytes, 0, length);
-                        for (int col = 0; col < w; col++) {
-                            yuv_bytes[channelOffset] = row_bytes[col * pixelStride];
-                            channelOffset += outputStride;
-                        }
-                    }
-                    if (row < h - 1) {
-                        buffer.position(buffer.position() + rowStride - length);
-                    }
-                }
-                buffer.clear();
             }
-            return true;
         } catch (Exception e) {
             e.printStackTrace();
-            return false;
         }
+        return false;
     }
     
     @Deprecated
