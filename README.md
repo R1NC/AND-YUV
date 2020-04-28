@@ -9,7 +9,7 @@ Build [LibYUV][1] for Android.
 * **Image to YUV**:
 
 ```java
-public static boolean imageToYuvBytes(Image image, YuvFormat yuvFormat, byte[] yuv_bytes);
+public static boolean I420WithImage(Image image, byte[] i420_bytes);
 public static int bitmapToI420(Bitmap bitmap, byte[] dst_bytes);
 ```
 
