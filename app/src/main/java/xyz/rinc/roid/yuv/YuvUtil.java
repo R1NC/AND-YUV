@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class YuvUtil {
+    
+    private static ByteBuffer i420ImageRowBuffer;
 
     static {
         System.loadLibrary("YuvUtil");
