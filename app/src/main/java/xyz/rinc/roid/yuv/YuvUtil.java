@@ -31,57 +31,77 @@ public class YuvUtil {
 
     public static boolean I420WithImage(Image image, byte[] i420_bytes) {
         try {
+            Rect crop = image.getCropRect();
+            int width = crop.width();
+            int height = crop.height();
             Image.Plane[] planes = image.getPlanes();
-            if (planes.length >= 3) {
-                ByteBuffer bufferY = planes[0].getBuffer();
-                ByteBuffer bufferU = planes[1].getBuffer();
-                ByteBuffer bufferV = planes[2].getBuffer();
-                int lengthY = bufferY.remaining();
-                int lengthU = bufferU.remaining();
-                int lengthV = bufferV.remaining();
-                if (i420_bytes != null && i420_bytes.length >= lengthY + lengthU + lengthV) {
-                    bufferY.get(i420_bytes, 0, lengthY);
-                    bufferU.get(i420_bytes, lengthY, lengthU);
-                    bufferV.get(i420_bytes, lengthY + lengthU, lengthV);
-                    return true;
+
+            int rowLen = planes[0].getRowStride();
+            if (i420ImageRowBuffer != null && i420ImageRowBuffer.capacity() != rowLen) {
+                i420ImageRowBuffer.clear();
+                i420ImageRowBuffer = null;
+                System.gc();
+            }
+            if (i420ImageRowBuffer == null) {
+                i420ImageRowBuffer = ByteBuffer.allocate(rowLen);
+            } else {
+                i420ImageRowBuffer.clear();
+            }
+
+            int channelOffset = 0;
+            int outputStride = 1;
+            ByteBuffer buffer;
+            for (int i = 0; i < planes.length; i++) {
+                switch (i) {
+                    case 0: {
+                        channelOffset = 0;
+                        outputStride = 1;
+                        break;
+                    }
+                    case 1: {
+                        channelOffset = width * height;
+                        outputStride = 1;
+                        break;
+                    }
+                    case 2: {
+                        channelOffset = width * height * 5 / 4;
+                        outputStride = 1;
+                        break;
+                    }
                 }
+                buffer = planes[i].getBuffer();
+                int rowStride = planes[i].getRowStride();
+                int pixelStride = planes[i].getPixelStride();
+                int shift = (i == 0) ? 0 : 1;
+                int w = width >> shift;
+                int h = height >> shift;
+                buffer.position(rowStride * (crop.top >> shift) + pixelStride * (crop.left >> shift));
+                for (int row = 0; row < h; row++) {
+                    int length;
+                    if (pixelStride == 1 && outputStride == 1) {
+                        length = w;
+                        buffer.get(i420_bytes, channelOffset, length);
+                        channelOffset += length;
+                    } else {
+                        length = (w - 1) * pixelStride + 1;
+                        buffer.get(i420ImageRowBuffer.array(), 0, length);
+                        for (int col = 0; col < w; col++) {
+                            i420_bytes[channelOffset] = i420ImageRowBuffer.array()[col * pixelStride];
+                            channelOffset += outputStride;
+                        }
+                    }
+                    if (row < h - 1) {
+                        buffer.position(buffer.position() + rowStride - length);
+                    }
+                }
+                buffer.clear();
             }
+
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
-        return false;
-    }
-    
-    @Deprecated
-    public static byte[] yuv2Jpeg(byte[] data, int format, final Size size, Rect cropRect, int quality) {
-        if (data == null || data.length <=0 || size == null || size.getWidth() == 0 || size.getHeight() == 0 || quality <= 0 || quality > 100) return null;
-        byte[] bytes = null;
-
-        byte[] nv21_bytes = null;
-        if (format == ImageFormat.YUV_420_888) {
-            nv21_bytes = new byte[data.length];
-            YuvUtil.I420ToNV21(data, size, nv21_bytes);
-            System.arraycopy(nv21_bytes, 0, data, 0, data.length);
-            format = ImageFormat.NV21;
-        }
-
-        if (cropRect == null) cropRect = new Rect(0, 0, size.getWidth(), size.getHeight());
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(data.length);
-        try {
-            if (new YuvImage(data, format, size.getWidth(), size.getHeight(), null).compressToJpeg(cropRect, quality, baos)) {
-                bytes = baos.toByteArray();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        if (baos != null) {
-            try {
-                baos.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return bytes;
     }
     
     /*
@@ -90,7 +110,7 @@ public class YuvUtil {
         matYUV.put(0, 0, yuvBytes);
 
         Mat matRGB = new Mat();
-        Imgproc.cvtColor(matYUV, matRGB, Imgproc.COLOR_YUV2RGB_IYUV);
+        Imgproc.cvtColor(matYUV, matRGB, Imgproc.COLOR_YUV2BGR_I420);
 
         Mat matRGBCropped = new Mat(matRGB, new org.opencv.core.Rect(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top));
 
