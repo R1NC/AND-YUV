@@ -107,17 +107,35 @@ public class YuvUtil {
     }
     
     /*
-    public static byte[] I420ToJPG(byte[] yuvBytes, Size size, Rect rect, int quality) {
+    public static byte[] I420ToJPG(byte[] yuvBytes, Size size, Rect rect, float scale, int quality) {
+        if (yuvBytes == null || size == null || rect == null || scale == 0 || quality <= 0 || quality > 100) return null;
+
+        long t = System.currentTimeMillis();
         Mat matYUV = new Mat(size.getHeight() * 3 / 2, size.getWidth(), CvType.CV_8UC1);
         matYUV.put(0, 0, yuvBytes);
 
-        Mat matRGB = new Mat();
-        Imgproc.cvtColor(matYUV, matRGB, Imgproc.COLOR_YUV2BGR_I420);
+        t = System.currentTimeMillis();
+        Mat matYUVCropped = new Mat(matYUV, new org.opencv.core.Rect(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top));
+        matYUV.release();
 
-        Mat matRGBCropped = new Mat(matRGB, new org.opencv.core.Rect(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top));
+        t = System.currentTimeMillis();
+        Mat matYUVScaled = new Mat();
+        int scaledWidth = (int)(rect.width() * scale);
+        if (scaledWidth % 2 != 0) scaledWidth += (2 - scaledWidth % 2);
+        int scaledHeight = (int)(rect.height() * scale);
+        if (scaledHeight % 3 != 0) scaledHeight += (3 - scaledHeight % 3);
+        Imgproc.resize(matYUVCropped, matYUVScaled, new org.opencv.core.Size(scaledWidth, scaledHeight));
+        matYUVCropped.release();
 
+        t = System.currentTimeMillis();
+        Mat matRGBScaled = new Mat();
+        Imgproc.cvtColor(matYUVScaled, matRGBScaled, Imgproc.COLOR_YUV2BGR_I420);
+        matYUVScaled.release();
+
+        t = System.currentTimeMillis();
         MatOfByte matOfByte = new MatOfByte();
-        Imgcodecs.imencode(".jpg", matRGBCropped, matOfByte, new MatOfInt(IMWRITE_JPEG_QUALITY, quality));
+        Imgcodecs.imencode(".jpg", matRGBScaled, matOfByte, new MatOfInt(IMWRITE_JPEG_QUALITY, quality));
+        matRGBScaled.release();
 
         return matOfByte.toArray();
     }*/
