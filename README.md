@@ -1,5 +1,5 @@
 # AND-YUV
-Build [LibYUV][1] for Android.
+[LibYUV][1] Utils for Android.
 
 
 [1]: https://chromium.googlesource.com/libyuv/libyuv
