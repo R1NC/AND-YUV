@@ -35,7 +35,7 @@ public:
 
 extern "C"
 JNIEXPORT jint JNICALL
-Java_com_tencent_sppd_yuv_YuvUtil_nativeBitmapToI420(JNIEnv *env, jclass,
+Java_xyz_rinc_roid_yuv_YuvUtil_nativeBitmapToI420(JNIEnv *env, jclass,
                                                      jobject bitmap, jbyteArray i420_bytes) {
     AndroidBitmapInfo bitmapInfo;
     if (AndroidBitmap_getInfo(env, bitmap, &bitmapInfo) < 0) {
